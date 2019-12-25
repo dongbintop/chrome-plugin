@@ -1,0 +1,16 @@
+{
+  "manifest_version": 2,
+  "name": "QR Code generator",
+  "description": "QR Code generator",
+  "version": "1.0",
+  "browser_action": {
+    "default_icon": "icon/man.png",
+    "default_popup": "popup.html",
+    "default_title": "QR Code generator"
+  },
+  "content_security_policy": "script-src 'self'; object-src 'self'",
+  "permissions": [
+    "activeTab",
+    "tabs"
+  ]
+}
