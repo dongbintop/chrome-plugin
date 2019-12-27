@@ -1,20 +1,15 @@
 var https_list = [];
 var body = {};
-var START_END_MOD = "start_end_mod";
+var START_END_MOD = false;
 var RequestFilter = {urls: ['http://*/*', 'https://*/*']};
 var useragent = null;
 var activeTabId = 0;
-
-chrome.storage.local.set({
-    START_END_MOD: false
-});
+var exist_request = {};
 
 
 function start() {
     https_list = [];
-    chrome.storage.local.set({
-        START_END_MOD: true
-    });
+    START_END_MOD = true;
     chrome.storage.local.set({
         "https_list": https_list
     });
@@ -22,13 +17,14 @@ function start() {
 
 
 function end() {
-    chrome.storage.local.set({
-        START_END_MOD: false
-    });
+    START_END_MOD = false;
 
 }
 
 chrome.webRequest.onBeforeSendHeaders.addListener(info => {
+    if (!START_END_MOD) {
+        return
+    }
     if (info.requestHeaders) {
         if (useragent && useragent != 'Current Browser') {
             // Replace the User-Agent header
@@ -50,6 +46,9 @@ chrome.webRequest.onBeforeSendHeaders.addListener(info => {
 }, RequestFilter, ['blocking', 'requestHeaders']);
 
 chrome.webRequest.onBeforeRequest.addListener(info => {
+    if (!START_END_MOD) {
+        return
+    }
     if (info.requestBody) {
         var postData = '';
         if (!info.requestBody.error) {
@@ -131,6 +130,9 @@ chrome.webRequest.onBeforeRequest.addListener(info => {
 
 
 chrome.webRequest.onSendHeaders.addListener(info => {
+    if (!START_END_MOD) {
+        return
+    }
     chrome.storage.local.get(null, function (items) {
         chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
             if (tabs.length > 0) {
@@ -197,7 +199,6 @@ chrome.webRequest.onSendHeaders.addListener(info => {
                 data.timestamp = Math.round(info.timeStamp); // in ns??
                 data.tabId = info.tabId;
                 data.headers = info.requestHeaders;
-                data.domain = info.initiator;
 
                 for (var index in data.headers) {
                     if (data.headers[index].name == 'Cookie') {
@@ -213,13 +214,9 @@ chrome.webRequest.onSendHeaders.addListener(info => {
                     }
                 }
 
-                chrome.storage.local.get(START_END_MOD, function (mod) {
-                    if (mod) {
-                        https_list.push(data);
-                        chrome.storage.local.set({
-                            "https_list": https_list
-                        });
-                    }
+                https_list.push(data);
+                chrome.storage.local.set({
+                    "https_list": https_list
                 });
             }
         });
